@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flaws Law — Command Center</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f1117;color:#e8eaf0;min-height:100vh;padding:16px}
+a{color:inherit;text-decoration:none}
+.db{display:grid;grid-template-columns:1fr;gap:16px;max-width:1400px;margin:0 auto}
+.topbar{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.metric{background:#1a1d27;border:0.5px solid #2a2d3a;border-radius:10px;padding:14px 16px}
+.metric-label{font-size:12px;color:#6b7280;margin-bottom:4px;display:flex;align-items:center;gap:5px}
+.metric-value{font-size:22px;font-weight:500;color:#e8eaf0}
+.metric-value.urgent{color:#f87171}
+.metric-value.warn{color:#fbbf24}
+.metric-value.ok{color:#34d399}
+.main{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.panel{background:#1a1d27;border:0.5px solid #2a2d3a;border-radius:12px;overflow:hidden}
+.panel-header{padding:12px 16px;border-bottom:0.5px solid #2a2d3a;display:flex;justify-content:space-between;align-items:center}
+.panel-title{font-size:12px;font-weight:500;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;display:flex;align-items:center;gap:6px}
+.panel-body{padding:12px 16px;max-height:420px;overflow-y:auto}
+.panel-body::-webkit-scrollbar{width:4px}
+.panel-body::-webkit-scrollbar-track{background:transparent}
+.panel-body::-webkit-scrollbar-thumb{background:#2a2d3a;border-radius:2px}
+.cal-day-header{font-size:12px;font-weight:500;color:#6b7280;margin:10px 0 6px;padding-bottom:4px;border-bottom:0.5px solid #2a2d3a}
+.cal-event{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:0.5px solid #1e2130}
+.cal-event:last-child{border-bottom:none}
+.cal-time{font-size:11px;color:#6b7280;min-width:44px;margin-top:2px;flex-shrink:0}
+.cal-dot{width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.cal-name{font-size:13px;color:#e8eaf0;line-height:1.4}
+.cal-loc{font-size:11px;color:#6b7280}
+.dot-court{background:#3b82f6}
+.dot-personal{background:#10b981}
+.dot-gym{background:#f59e0b}
+.dot-hockey{background:#8b5cf6}
+.dot-deadline{background:#ef4444}
+.case-card{padding:10px 0;border-bottom:0.5px solid #1e2130;cursor:pointer}
+.case-card:last-child{border-bottom:none}
+.case-card:hover .case-name{color:#60a5fa}
+.case-name{font-size:13px;font-weight:500;color:#e8eaf0;margin-bottom:3px;transition:color 0.15s}
+.case-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:3px}
+.case-court{font-size:11px;color:#6b7280}
+.badge{font-size:10px;padding:2px 7px;border-radius:6px;font-weight:500}
+.badge-active{background:#1e3a5f;color:#60a5fa}
+.badge-disc{background:#14352a;color:#34d399}
+.badge-trial{background:#3b1f1f;color:#f87171}
+.badge-eval{background:#3b2e10;color:#fbbf24}
+.case-deadline{font-size:11px;margin-top:4px;display:flex;align-items:center;gap:4px}
+.deadline-urgent{color:#f87171}
+.deadline-warn{color:#fbbf24}
+.deadline-ok{color:#6b7280}
+.task-item{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:0.5px solid #1e2130}
+.task-item:last-child{border-bottom:none}
+.task-check{width:16px;height:16px;border-radius:3px;border:1.5px solid #3a3d4a;flex-shrink:0;margin-top:1px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:transparent;transition:all 0.15s}
+.task-check:hover{border-color:#60a5fa}
+.task-check.done{background:#1e3a5f;border-color:#3b82f6}
+.task-text{font-size:13px;color:#e8eaf0;line-height:1.4}
+.task-text.done{text-decoration:line-through;color:#4b5563}
+.task-meta{display:flex;gap:6px;align-items:center;margin-top:3px;flex-wrap:wrap}
+.task-due{font-size:11px}
+.task-case{font-size:11px;color:#6b7280}
+.pri-high{color:#f87171}
+.pri-med{color:#fbbf24}
+.pri-low{color:#6b7280}
+.add-btn{display:flex;align-items:center;gap:5px;font-size:12px;color:#6b7280;cursor:pointer;border:none;background:none;font-family:inherit;transition:color 0.15s;padding:2px 0}
+.add-btn:hover{color:#e8eaf0}
+.add-form{display:none;flex-direction:column;gap:8px;padding:10px 0;border-top:0.5px solid #2a2d3a;margin-top:8px}
+.add-form.open{display:flex}
+.add-form input,.add-form select{font-size:13px;padding:7px 10px;border-radius:8px;background:#0f1117;border:0.5px solid #2a2d3a;color:#e8eaf0;font-family:inherit;width:100%}
+.add-form input:focus,.add-form select:focus{outline:none;border-color:#3b82f6}
+.add-form select option{background:#1a1d27}
+.add-form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.form-btns{display:flex;gap:8px}
+.form-btns button{font-size:12px;padding:6px 16px;border-radius:8px;cursor:pointer;font-family:inherit;border:0.5px solid transparent;transition:all 0.15s}
+.btn-save{background:#1e3a5f;color:#60a5fa;border-color:#2d5a8e}
+.btn-save:hover{background:#2d5a8e}
+.btn-cancel{background:#1a1d27;color:#6b7280;border-color:#2a2d3a}
+.btn-cancel:hover{color:#e8eaf0}
+.bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.shortcuts-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.shortcut-btn{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:0.5px solid #2a2d3a;background:#0f1117;cursor:pointer;font-size:13px;color:#e8eaf0;font-family:inherit;text-align:left;transition:all 0.15s;text-decoration:none}
+.shortcut-btn:hover{border-color:#3b82f6;background:#1a1d27;color:#60a5fa}
+.shortcut-icon{font-size:18px;color:#6b7280;flex-shrink:0}
+.shortcut-btn:hover .shortcut-icon{color:#60a5fa}
+.ai-box{background:#0f1117;border:0.5px solid #2a2d3a;border-radius:10px;padding:14px}
+.ai-label{font-size:11px;color:#6b7280;margin-bottom:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em}
+.ai-item{font-size:13px;color:#9ca3af;padding:5px 0;display:flex;gap:8px;align-items:flex-start;border-bottom:0.5px solid #1e2130;cursor:pointer;transition:color 0.15s}
+.ai-item:last-child{border-bottom:none}
+.ai-item:hover{color:#e8eaf0}
+.ai-bullet{color:#3b82f6;font-size:16px;line-height:1;margin-top:0px;flex-shrink:0}
+.vacation-bar{background:#1a1d27;border:0.5px solid #2a2d3a;border-radius:10px;padding:13px 18px;display:flex;align-items:center;gap:16px}
+.vac-label{font-size:13px;color:#9ca3af;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.vac-track{flex:1;height:5px;background:#2a2d3a;border-radius:3px;overflow:hidden}
+.vac-fill{height:100%;background:linear-gradient(90deg,#3b82f6,#60a5fa);border-radius:3px;transition:width 1s}
+.vac-days{font-size:13px;font-weight:500;color:#e8eaf0;white-space:nowrap}
+.now-line{display:flex;align-items:center;gap:8px;padding:2px 0 8px}
+.now-dot{width:7px;height:7px;border-radius:50%;background:#ef4444;flex-shrink:0}
+.now-text{font-size:12px;color:#ef4444;font-weight:500}
+.section-header{font-size:12px;font-weight:500;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;padding:0 0 10px;display:flex;align-items:center;gap:6px}
+.empty-state{font-size:13px;color:#4b5563;padding:8px 0}
+.delete-btn{font-size:11px;color:#4b5563;cursor:pointer;border:none;background:none;font-family:inherit;padding:0;transition:color 0.15s;flex-shrink:0}
+.delete-btn:hover{color:#f87171}
+.header-bar{display:flex;justify-content:space-between;align-items:center;padding:0 0 16px}
+.header-title{font-size:18px;font-weight:500;color:#e8eaf0;display:flex;align-items:center;gap:10px}
+.header-sub{font-size:13px;color:#6b7280}
+.status-dot{width:7px;height:7px;border-radius:50%;background:#34d399;display:inline-block}
+</style>
+</head>
+<body>
+
+<div class="db">
+
+  <div class="header-bar">
+    <div class="header-title">
+      <span class="status-dot"></span>
+      Flaws Law — Command Center
+    </div>
+    <div class="header-sub" id="header-date"></div>
+  </div>
+
+  <div class="topbar">
+    <div class="metric">
+      <div class="metric-label"><i class="ti ti-clock"></i> Current time</div>
+      <div class="metric-value" id="live-clock" style="font-size:18px"></div>
+    </div>
+    <div class="metric">
+      <div class="metric-label"><i class="ti ti-alert-triangle"></i> Deadlines ≤7 days</div>
+      <div class="metric-value urgent" id="stat-urgent">—</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label"><i class="ti ti-briefcase"></i> Active cases</div>
+      <div class="metric-value" id="stat-cases">—</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label"><i class="ti ti-checklist"></i> Open tasks</div>
+      <div class="metric-value warn" id="stat-tasks">—</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label"><i class="ti ti-list-check"></i> Overdue tasks</div>
+      <div class="metric-value urgent" id="stat-overdue">—</div>
+    </div>
+  </div>
+
+  <div class="vacation-bar">
+    <div class="vac-label"><i class="ti ti-plane"></i> California trip (Jun 24)</div>
+    <div class="vac-track"><div class="vac-fill" id="vac-fill" style="width:0%"></div></div>
+    <div class="vac-days" id="vac-days"></div>
+  </div>
+
+  <div class="main">
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title"><i class="ti ti-calendar"></i> Calendar</span>
+      </div>
+      <div class="panel-body">
+        <div class="now-line"><div class="now-dot"></div><div class="now-text" id="now-time"></div></div>
+        <div class="cal-day-header">Today — <span id="cal-today-label"></span></div>
+        <div id="cal-today-events"></div>
+        <div class="cal-day-header" style="margin-top:14px">Upcoming</div>
+        <div id="cal-upcoming"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title"><i class="ti ti-briefcase"></i> Active cases</span>
+        <button class="add-btn" onclick="toggleForm('case-form')"><i class="ti ti-plus"></i> Add case</button>
+      </div>
+      <div class="panel-body">
+        <div id="cases-list"></div>
+        <div class="add-form" id="case-form">
+          <input type="text" id="cf-name" placeholder="Case name (e.g. Smith v. Acme)">
+          <input type="text" id="cf-court" placeholder="Court">
+          <div class="add-form-row">
+            <select id="cf-status">
+              <option value="active">Active</option>
+              <option value="discovery">Discovery</option>
+              <option value="trial">Trial Prep</option>
+              <option value="eval">Evaluating</option>
+            </select>
+            <input type="date" id="cf-deadline" title="Next deadline">
+          </div>
+          <input type="text" id="cf-deadline-label" placeholder="Deadline label (e.g. Opposition due)">
+          <div class="form-btns">
+            <button class="btn-save" onclick="saveCase()">Save</button>
+            <button class="btn-cancel" onclick="toggleForm('case-form')">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title"><i class="ti ti-checklist"></i> Tasks</span>
+        <button class="add-btn" onclick="toggleForm('task-form')"><i class="ti ti-plus"></i> Add task</button>
+      </div>
+      <div class="panel-body">
+        <div id="tasks-list"></div>
+        <div class="add-form" id="task-form">
+          <input type="text" id="tf-text" placeholder="Task description">
+          <div class="add-form-row">
+            <select id="tf-pri">
+              <option value="high">High priority</option>
+              <option value="med" selected>Medium priority</option>
+              <option value="low">Low priority</option>
+            </select>
+            <input type="date" id="tf-due">
+          </div>
+          <input type="text" id="tf-case" placeholder="Case name (optional)">
+          <div class="form-btns">
+            <button class="btn-save" onclick="saveTask()">Save</button>
+            <button class="btn-cancel" onclick="toggleForm('task-form')">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bottom-row">
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title"><i class="ti ti-bolt"></i> Quick actions</span>
+      </div>
+      <div class="panel-body">
+        <div class="shortcuts-grid">
+          <a class="shortcut-btn" href="https://tomflaws.github.io/ans-deadline-tracker" target="_blank"><i class="ti ti-clock-hour-4 shortcut-icon"></i>ANS Deadline Tracker</a>
+          <a class="shortcut-btn" href="https://ans-trial-cockpit.vercel.app" target="_blank"><i class="ti ti-device-tablet shortcut-icon"></i>Trial Cockpit</a>
+          <a class="shortcut-btn" href="https://claude.ai" target="_blank"><i class="ti ti-message shortcut-icon"></i>Ask Claude</a>
+          <a class="shortcut-btn" href="https://mail.google.com" target="_blank"><i class="ti ti-mail shortcut-icon"></i>Email</a>
+          <a class="shortcut-btn" href="https://calendar.google.com" target="_blank"><i class="ti ti-calendar shortcut-icon"></i>Full calendar</a>
+          <a class="shortcut-btn" href="https://www.suffolksuperiorcourt.com" target="_blank"><i class="ti ti-building shortcut-icon"></i>Suffolk Superior</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title"><i class="ti ti-brain"></i> Focus prompts</span>
+      </div>
+      <div class="panel-body">
+        <div class="ai-box">
+          <div class="ai-label">Open in Claude to ask</div>
+          <div class="ai-item" onclick="openClaude('What should I focus on today given my active cases and deadlines?')"><span class="ai-bullet">›</span>What should I focus on today?</div>
+          <div class="ai-item" onclick="openClaude('Do I have any scheduling conflicts or deadline risks this week?')"><span class="ai-bullet">›</span>Any conflicts or risks this week?</div>
+          <div class="ai-item" onclick="openClaude('I have 2 free hours — what is the highest value use of my time right now?')"><span class="ai-bullet">›</span>Best use of 2 free hours?</div>
+          <div class="ai-item" onclick="openClaude('Summarize the status of all my active cases and flag anything that needs attention')"><span class="ai-bullet">›</span>Case status summary</div>
+          <div class="ai-item" onclick="openClaude('Help me schedule prep time for my upcoming court dates this week')"><span class="ai-bullet">›</span>Schedule prep time</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+const TODAY = new Date();
+
+function fmt(d){return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}
+function fmtShort(d){return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+function daysUntil(ds){
+  const d=new Date(ds+'T00:00:00');
+  const t=new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate());
+  return Math.ceil((d-t)/(1000*60*60*24));
+}
+
+document.getElementById('header-date').textContent=TODAY.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+document.getElementById('cal-today-label').textContent=fmt(TODAY);
+
+function updateClock(){
+  const n=new Date();
+  const t=n.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+  document.getElementById('live-clock').textContent=t;
+  document.getElementById('now-time').textContent='Now — '+t;
+}
+updateClock();setInterval(updateClock,10000);
+
+const tripDate=new Date('2026-06-24T00:00:00');
+const daysToTrip=daysUntil('2026-06-24');
+const pct=Math.max(0,Math.min(100,Math.round((1-(daysToTrip/30))*100)));
+setTimeout(()=>{document.getElementById('vac-fill').style.width=pct+'%';},200);
+document.getElementById('vac-days').textContent=daysToTrip>0?daysToTrip+' days away':(daysToTrip===0?'Departing today!':'Trip underway!');
+
+const calToday=[
+  {time:'2:00 PM',name:'Rodriguez Mo to Consolidate Hearing',loc:'Suffolk County Superior Court',dot:'dot-court'},
+  {time:'5:00 PM',name:'LHS Athletics meeting',loc:'',dot:'dot-personal'},
+  {time:'8:00 PM',name:'Lynnfield.G.78.Select – Training',loc:'Lynnfield High School',dot:'dot-hockey'},
+];
+const calUpcoming=[
+  {date:'Thu Jun 11',name:'Gym – Squat/Pull',time:'7:00 AM',dot:'dot-gym'},
+  {date:'Fri Jun 12',name:'Inghram – Tetra Tech response deadline',time:'',dot:'dot-deadline'},
+  {date:'Sat Jun 13',name:'Playmaker Girls HS practice',time:'',dot:'dot-hockey'},
+  {date:'Tue Jun 24',name:'California trip — depart LAX',time:'',dot:'dot-personal'},
+];
+
+const tEl=document.getElementById('cal-today-events');
+if(calToday.length){
+  calToday.forEach(e=>{
+    tEl.innerHTML+=`<div class="cal-event"><div class="cal-time">${e.time}</div><div class="cal-dot ${e.dot}"></div><div><div class="cal-name">${e.name}</div>${e.loc?`<div class="cal-loc">${e.loc}</div>`:''}</div></div>`;
+  });
+}else{tEl.innerHTML='<div class="empty-state">No events today</div>';}
+
+const uEl=document.getElementById('cal-upcoming');
+calUpcoming.forEach(e=>{
+  uEl.innerHTML+=`<div class="cal-event"><div class="cal-time" style="min-width:58px">${e.date}</div><div class="cal-dot ${e.dot}"></div><div><div class="cal-name">${e.name}</div>${e.time?`<div class="cal-loc">${e.time}</div>`:''}</div></div>`;
+});
+
+const statusMap={active:['badge-active','Active'],discovery:['badge-disc','Discovery'],trial:['badge-trial','Trial Prep'],eval:['badge-eval','Evaluating']};
+
+let cases=[];
+let tasks=[];
+try{const s=localStorage.getItem('flaws_cases_v2');if(s)cases=JSON.parse(s);}catch(e){}
+try{const s=localStorage.getItem('flaws_tasks_v2');if(s)tasks=JSON.parse(s);}catch(e){}
+
+if(!cases.length){
+  cases=[
+    {id:1,name:'Inghram v. MBTA & Tetra Tech',court:'Suffolk Superior Court',status:'active',deadline:'2026-06-15',deadlineLabel:'Motion to Compel response'},
+    {id:2,name:'Surgical screw products liability',court:'TBD',status:'eval',deadline:'',deadlineLabel:''},
+  ];
+  saveCases();
+}
+if(!tasks.length){
+  tasks=[
+    {id:1,text:'Review Tetra Tech RFA responses',pri:'high',due:'2026-06-13',caseRef:'Inghram',done:false},
+    {id:2,text:'Evaluate surgical screw referral materials',pri:'high',due:'2026-06-16',caseRef:'Surgical screw',done:false},
+    {id:3,text:'Confirm California trip logistics',pri:'med',due:'2026-06-22',caseRef:'',done:false},
+  ];
+  saveTasks();
+}
+
+function saveCases(){
+  try{localStorage.setItem('flaws_cases_v2',JSON.stringify(cases));}catch(e){}
+  renderAll();
+}
+function saveTasks(){
+  try{localStorage.setItem('flaws_tasks_v2',JSON.stringify(tasks));}catch(e){}
+  renderAll();
+}
+
+function renderAll(){
+  renderCases();renderTasks();updateStats();
+}
+
+function renderCases(){
+  const el=document.getElementById('cases-list');
+  if(!cases.length){el.innerHTML='<div class="empty-state">No cases yet — add one above.</div>';return;}
+  el.innerHTML=cases.map(c=>{
+    const [bc,bl]=statusMap[c.status]||['badge-active','Active'];
+    let dl='';
+    if(c.deadline){
+      const d=daysUntil(c.deadline);
+      const cls=d<=0?'deadline-urgent':d<=3?'deadline-urgent':d<=7?'deadline-warn':'deadline-ok';
+      const label=d<0?`${Math.abs(d)}d overdue`:d===0?'Due today':`${d}d`;
+      dl=`<div class="case-deadline ${cls}"><i class="ti ti-clock" style="font-size:11px"></i> ${c.deadlineLabel||'Deadline'}: ${fmtShort(new Date(c.deadline+'T00:00:00'))} (${label})</div>`;
+    }
+    return `<div class="case-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div class="case-name">${c.name}</div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+          <span class="badge ${bc}">${bl}</span>
+          <button class="delete-btn" onclick="deleteCase(${c.id})" title="Remove"><i class="ti ti-x"></i></button>
+        </div>
+      </div>
+      <div class="case-court">${c.court}</div>
+      ${dl}
+    </div>`;
+  }).join('');
+}
+
+function renderTasks(){
+  const el=document.getElementById('tasks-list');
+  const sorted=[...tasks].sort((a,b)=>{
+    if(!a.done&&b.done)return -1;if(a.done&&!b.done)return 1;
+    const pd={high:0,med:1,low:2};
+    const dd=(a.due&&b.due)?new Date(a.due)-new Date(b.due):(a.due?-1:(b.due?1:0));
+    return dd||(pd[a.pri]-pd[b.pri]);
+  });
+  if(!sorted.length){el.innerHTML='<div class="empty-state">No tasks yet.</div>';return;}
+  el.innerHTML=sorted.map(t=>{
+    const priLabel={high:'High',med:'Med',low:'Low'}[t.pri];
+    const priCls={high:'pri-high',med:'pri-med',low:'pri-low'}[t.pri];
+    let dueStr='';
+    if(t.due){
+      const d=daysUntil(t.due);
+      const cls=d<0?'pri-high':d===0?'deadline-urgent':d<=3?'deadline-urgent':d<=7?'deadline-warn':'deadline-ok';
+      const label=d<0?`${Math.abs(d)}d overdue`:d===0?'Due today':`Due ${fmtShort(new Date(t.due+'T00:00:00'))}`;
+      dueStr=`<span class="task-due ${cls}">${label}</span>`;
+    }
+    return `<div class="task-item">
+      <div class="task-check ${t.done?'done':''}" onclick="toggleTask(${t.id})" role="checkbox" aria-checked="${t.done}" aria-label="Toggle task">${t.done?'<i class="ti ti-check" style="font-size:11px;color:#60a5fa"></i>':''}</div>
+      <div style="flex:1">
+        <div class="task-text ${t.done?'done':''}">${t.text}</div>
+        <div class="task-meta">
+          <span style="font-size:10px;font-weight:500" class="${priCls}">${priLabel}</span>
+          ${dueStr}
+          ${t.caseRef?`<span class="task-case">${t.caseRef}</span>`:''}
+        </div>
+      </div>
+      <button class="delete-btn" onclick="deleteTask(${t.id})" title="Remove"><i class="ti ti-x"></i></button>
+    </div>`;
+  }).join('');
+}
+
+function updateStats(){
+  const urgent=cases.filter(c=>c.deadline&&daysUntil(c.deadline)<=7&&daysUntil(c.deadline)>=0).length;
+  const open=tasks.filter(t=>!t.done).length;
+  const overdue=tasks.filter(t=>!t.done&&t.due&&daysUntil(t.due)<0).length;
+  document.getElementById('stat-urgent').textContent=urgent;
+  document.getElementById('stat-cases').textContent=cases.length;
+  document.getElementById('stat-tasks').textContent=open;
+  document.getElementById('stat-overdue').textContent=overdue;
+  document.getElementById('stat-overdue').className='metric-value '+(overdue>0?'urgent':'ok');
+}
+
+function toggleTask(id){const t=tasks.find(t=>t.id===id);if(t)t.done=!t.done;saveTasks();}
+function deleteCase(id){cases=cases.filter(c=>c.id!==id);saveCases();}
+function deleteTask(id){tasks=tasks.filter(t=>t.id!==id);saveTasks();}
+
+function toggleForm(id){document.getElementById(id).classList.toggle('open');}
+
+function saveCase(){
+  const name=document.getElementById('cf-name').value.trim();
+  if(!name)return;
+  cases.push({id:Date.now(),name,court:document.getElementById('cf-court').value.trim(),status:document.getElementById('cf-status').value,deadline:document.getElementById('cf-deadline').value,deadlineLabel:document.getElementById('cf-deadline-label').value.trim()});
+  saveCases();
+  document.getElementById('case-form').classList.remove('open');
+  ['cf-name','cf-court','cf-deadline','cf-deadline-label'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cf-status').value='active';
+}
+
+function saveTask(){
+  const text=document.getElementById('tf-text').value.trim();
+  if(!text)return;
+  tasks.push({id:Date.now(),text,pri:document.getElementById('tf-pri').value,due:document.getElementById('tf-due').value,caseRef:document.getElementById('tf-case').value.trim(),done:false});
+  saveTasks();
+  document.getElementById('task-form').classList.remove('open');
+  ['tf-text','tf-due','tf-case'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('tf-pri').value='med';
+}
+
+function openClaude(prompt){window.open('https://claude.ai/new?q='+encodeURIComponent(prompt),'_blank');}
+
+renderAll();
+</script>
+</body>
+</html>
